@@ -3,7 +3,7 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs?ref=nixpkgs-unstable";
     systems.url = "github:nix-systems/default";
-    parts = {
+    flake-parts = {
       url = "github:hercules-ci/flake-parts";
       inputs.nixpkgs-lib.follows = "nixpkgs";
     };
@@ -18,9 +18,12 @@
   };
   outputs =
     inputs:
-    inputs.parts.lib.mkFlake { inherit inputs; } {
+    inputs.flake-parts.lib.mkFlake { inherit inputs; } {
       systems = import inputs.systems;
-      imports = [ inputs.pre-commit-hooks.flakeModule ];
+      imports = [
+        inputs.pre-commit-hooks.flakeModule
+        inputs.flake-parts.flakeModules.easyOverlay
+      ];
       perSystem =
         {
           system,
@@ -49,6 +52,15 @@
             };
           };
 
+          overlayAttrs = {
+            inherit (config.packages) fontawesome;
+            typstPackages = pkgs.typstPackages.extend (
+              _: _: {
+                inherit (config.packages) grotesk-cv;
+              }
+            );
+          };
+
           packages = {
 
             fontawesome = (
@@ -74,9 +86,6 @@
                 };
               typstDeps = with pkgs.typstPackages; [
                 fontawesome
-                octique
-                use-tabler-icons
-                use-academicons
               ];
             });
 
